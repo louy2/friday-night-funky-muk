@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friday Night Funky Muk - 甜瓜人 vs 臭臭泥</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@keyframes bgPulse {
+  0%, 100% { background-color: #1a0a2e; }
+  50% { background-color: #16082a; }
+}
+
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes slimeWobble {
+  0%, 100% { transform: scaleX(1) scaleY(1); }
+  25% { transform: scaleX(1.05) scaleY(0.95); }
+  50% { transform: scaleX(0.95) scaleY(1.05); }
+  75% { transform: scaleX(1.03) scaleY(0.97); }
+}
+
+@keyframes hitFlash {
+  0% { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes missShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes comboPopIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ratingFade {
+  0% { transform: translateY(0) scale(1.5); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+}
+
+@keyframes sparkle {
+  0% { transform: scale(0) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+}
+
+body {
+  background: #1a0a2e;
+  color: #fff;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  animation: bgPulse 2s ease-in-out infinite;
+  user-select: none;
+}
+
+#gameContainer {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Top HUD ===== */
+#hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 30px;
+  height: 60px;
+  background: rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+#hud .player-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#hud .player-name {
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 0 10px currentColor;
+}
+
+#hud .p1-name { color: #4ade80; }
+#hud .p2-name { color: #a855f7; }
+
+.health-bar-container {
+  width: 300px;
+  height: 24px;
+  background: #333;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #555;
+  position: relative;
+}
+
+.health-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 10px;
+}
+
+#p1HealthFill {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  width: 50%;
+  float: right;
+}
+
+#p2HealthFill {
+  background: linear-gradient(90deg, #a855f7, #7c3aed);
+  width: 50%;
+}
+
+#healthBarCenter {
+  width: 500px;
+  height: 28px;
+  background: #222;
+  border-radius: 14px;
+  border: 2px solid #666;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+}
+
+#healthBarCenter .half {
+  width: 50%;
+  height: 100%;
+  position: relative;
+}
+
+#healthBarCenter .half.left {
+  display: flex;
+  justify-content: flex-end;
+}
+
+#healthIcon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  z-index: 2;
+  text-shadow: 0 0 8px rgba(255,255,255,0.8);
+}
+
+/* ===== Score ===== */
+#scoreArea {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 30px;
+  font-size: 14px;
+  background: rgba(0,0,0,0.3);
+}
+
+#scoreArea .score {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+#scoreArea .p1-score { color: #4ade80; }
+#scoreArea .p2-score { color: #a855f7; }
+#scoreArea .combo { color: #fbbf24; font-size: 14px; }
+
+/* ===== Main Stage ===== */
+#stage {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background elements */
+.stage-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #0d0521 0%, #1a0a2e 40%, #2d1b4e 100%);
+}
+
+.stage-floor {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(100, 50, 150, 0.3));
+}
+
+.speaker {
+  position: absolute;
+  bottom: 15%;
+  width: 80px;
+  height: 100px;
+  border-radius: 10px;
+}
+
+.speaker.left { left: 10%; }
+.speaker.right { right: 10%; }
+
+/* Character areas */
+.character-area {
+  width: 25%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5%;
+  z-index: 2;
+}
+
+.character-area.left { order: 1; }
+.character-area.right { order: 3; }
+
+/* Note highway (center) */
+#noteHighway {
+  width: 50%;
+  order: 2;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  z-index: 3;
+}
+
+.lane-container {
+  display: flex;
+  gap: 4px;
+  position: relative;
+  height: 100%;
+  width: 380px;
+}
+
+/* Divider */
+.lane-divider {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.15), transparent);
+  z-index: 1;
+}
+
+/* Individual lanes */
+.lane {
+  width: 80px;
+  height: 100%;
+  position: relative;
+  border-left: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Target zone */
+.target-zone {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  border: 3px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  transition: all 0.1s;
+}
+
+.target-zone.active {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.6);
+  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+}
+
+/* P1 lanes (green theme) */
+.lane.p1 .target-zone { border-color: rgba(74, 222, 128, 0.4); }
+.lane.p1 .target-zone.active {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.25);
+  box-shadow: 0 0 25px rgba(74, 222, 128, 0.4);
+}
+
+/* P2 lanes (purple theme) */
+.lane.p2 .target-zone { border-color: rgba(168, 85, 247, 0.4); }
+.lane.p2 .target-zone.active {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.25);
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+}
+
+/* Arrow notes */
+.note {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.note.p1 {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+  color: #fff;
+}
+
+.note.p2 {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+  color: #fff;
+}
+
+/* Key labels */
+.key-label {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  font-weight: bold;
+}
+
+/* Rating popup */
+.rating-popup {
+  position: absolute;
+  font-size: 24px;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 20;
+  animation: ratingFade 0.8s ease-out forwards;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.rating-popup.perfect { color: #fbbf24; }
+.rating-popup.great { color: #4ade80; }
+.rating-popup.good { color: #60a5fa; }
+.rating-popup.miss { color: #ef4444; }
+
+/* ===== Characters ===== */
+.character {
+  position: relative;
+  width: 200px;
+  height: 280px;
+}
+
+/* 甜瓜人 (Melon Man) */
+.melon-man {
+  animation: floatUp 3s ease-in-out infinite;
+}
+
+.melon-man .head {
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle at 35% 35%, #8fce00, #4a7a0a);
+  border-radius: 50%;
+  margin: 0 auto;
+  position: relative;
+  border: 3px solid #2d5016;
+  box-shadow: 0 0 20px rgba(100, 180, 0, 0.4);
+}
+
+.melon-man .head::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 20px;
+  background: #2d5016;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 4px;
+}
+
+.melon-man .head .stripe {
+  position: absolute;
+  width: 3px;
+  height: 80%;
+  background: rgba(45, 80, 22, 0.4);
+  top: 10%;
+  border-radius: 2px;
+}
+
+.melon-man .head .stripe:nth-child(1) { left: 25%; transform: rotate(-5deg); }
+.melon-man .head .stripe:nth-child(2) { left: 45%; }
+.melon-man .head .stripe:nth-child(3) { left: 65%; transform: rotate(5deg); }
+
+.melon-man .eyes {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+}
+
+.melon-man .eye {
+  width: 16px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  position: relative;
+}
+
+.melon-man .eye::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 10px;
+  background: #111;
+  border-radius: 50%;
+  top: 5px;
+  left: 4px;
+}
+
+.melon-man .mouth {
+  position: absolute;
+  bottom: 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 12px;
+  border-radius: 0 0 15px 15px;
+  background: #c0392b;
+  border: 2px solid #922b21;
+}
+
+.melon-man.singing .mouth {
+  height: 20px;
+  width: 24px;
+  border-radius: 50%;
+}
+
+.melon-man .body {
+  width: 70px;
+  height: 90px;
+  background: linear-gradient(180deg, #e74c3c, #c0392b);
+  margin: -5px auto 0;
+  border-radius: 10px 10px 5px 5px;
+  position: relative;
+}
+
+.melon-man .arm {
+  position: absolute;
+  width: 20px;
+  height: 60px;
+  background: linear-gradient(180deg, #e74c3c, #c0392b);
+  border-radius: 10px;
+  top: 5px;
+  transition: transform 0.15s;
+}
+
+.melon-man .arm.left-arm { left: -18px; transform: rotate(10deg); }
+.melon-man .arm.right-arm { right: -18px; transform: rotate(-10deg); }
+
+.melon-man.singing .arm.left-arm { transform: rotate(-30deg); }
+.melon-man.singing .arm.right-arm { transform: rotate(30deg); }
+
+.melon-man .legs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.melon-man .leg {
+  width: 22px;
+  height: 50px;
+  background: #2c3e50;
+  border-radius: 5px 5px 8px 8px;
+}
+
+.melon-man .shoe {
+  width: 30px;
+  height: 14px;
+  background: #e74c3c;
+  border-radius: 8px 12px 4px 4px;
+  margin-top: -2px;
+}
+
+.melon-man .mic {
+  position: absolute;
+  right: -35px;
+  top: 20px;
+  width: 8px;
+  height: 40px;
+  background: linear-gradient(180deg, #888, #555);
+  border-radius: 4px;
+  transform: rotate(-20deg);
+}
+
+.melon-man .mic::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #444, #222);
+  border-radius: 50% 50% 30% 30%;
+  border: 1px solid #666;
+}
+
+/* 臭臭泥 (Muk/Grimer) */
+.muk {
+  animation: slimeWobble 2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.muk .body-main {
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(ellipse at 40% 30%, #9b59b6, #6c3483, #4a235a);
+  border-radius: 50% 60% 40% 50% / 60% 50% 50% 40%;
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 0 30px rgba(155, 89, 182, 0.5);
+}
+
+.muk .body-main::before {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 30%;
+  background: rgba(200, 150, 255, 0.15);
+  border-radius: 50%;
+  top: 10%;
+  left: 10%;
+}
+
+.muk .eyes {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 30px;
+}
+
+.muk .eye {
+  width: 28px;
+  height: 32px;
+  background: #fff;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 0 8px rgba(255,255,255,0.5);
+}
+
+.muk .eye::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  background: #2c0a3e;
+  border-radius: 50%;
+  top: 8px;
+  left: 7px;
+}
+
+.muk .eye::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  top: 6px;
+  left: 8px;
+  z-index: 1;
+}
+
+.muk .mouth {
+  position: absolute;
+  bottom: 28%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 18px;
+  background: #2c0a3e;
+  border-radius: 0 0 25px 25px;
+  border: 2px solid #1a0625;
+}
+
+.muk.singing .mouth {
+  height: 28px;
+  width: 40px;
+  border-radius: 50%;
+}
+
+.muk .drip {
+  position: absolute;
+  background: linear-gradient(180deg, #7d3c98, #6c3483);
+  border-radius: 0 0 50% 50%;
+  animation: dripAnim 3s ease-in-out infinite;
+}
+
+@keyframes dripAnim {
+  0%, 100% { height: 20px; }
+  50% { height: 35px; }
+}
+
+.muk .drip:nth-child(1) { width: 25px; left: 10px; bottom: -15px; animation-delay: 0s; }
+.muk .drip:nth-child(2) { width: 30px; right: 20px; bottom: -20px; animation-delay: 1s; }
+.muk .drip:nth-child(3) { width: 20px; left: 50%; bottom: -10px; animation-delay: 0.5s; }
+
+.muk .arm-sludge {
+  position: absolute;
+  width: 50px;
+  height: 80px;
+  background: linear-gradient(180deg, #8e44ad, #6c3483);
+  border-radius: 30px 30px 20px 20px;
+  top: 30%;
+  transition: transform 0.15s;
+}
+
+.muk .arm-sludge.left-arm {
+  left: -30px;
+  transform: rotate(15deg);
+  border-radius: 20px 30px 20px 30px;
+}
+
+.muk .arm-sludge.right-arm {
+  right: -30px;
+  transform: rotate(-15deg);
+  border-radius: 30px 20px 30px 20px;
+}
+
+.muk.singing .arm-sludge.left-arm { transform: rotate(-20deg) translateY(-10px); }
+.muk.singing .arm-sludge.right-arm { transform: rotate(20deg) translateY(-10px); }
+
+.muk .base {
+  width: 180px;
+  height: 40px;
+  background: radial-gradient(ellipse, #6c3483, #4a235a);
+  border-radius: 50%;
+  margin: -20px auto 0;
+  box-shadow: 0 5px 20px rgba(108, 52, 131, 0.6);
+}
+
+.muk .stink-lines {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.muk .stink-line {
+  position: absolute;
+  font-size: 16px;
+  color: rgba(155, 89, 182, 0.5);
+  animation: stinkFloat 2s ease-out infinite;
+}
+
+@keyframes stinkFloat {
+  0% { transform: translateY(0); opacity: 0.6; }
+  100% { transform: translateY(-30px); opacity: 0; }
+}
+
+.muk .stink-line:nth-child(1) { left: -20px; animation-delay: 0s; }
+.muk .stink-line:nth-child(2) { left: 0px; animation-delay: 0.7s; }
+.muk .stink-line:nth-child(3) { left: 20px; animation-delay: 1.4s; }
+
+/* ===== Screens ===== */
+.screen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: #1a0a2e;
+}
+
+.screen.hidden { display: none; }
+
+#titleScreen {
+  background: radial-gradient(ellipse at center, #2d1b4e, #1a0a2e);
+}
+
+.title-text {
+  font-size: 52px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #4ade80, #fbbf24, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  margin-bottom: 10px;
+  letter-spacing: 2px;
+}
+
+.title-sub {
+  font-size: 28px;
+  color: #a78bfa;
+  margin-bottom: 50px;
+  animation: neonFlicker 2s infinite;
+}
+
+.title-chars {
+  display: flex;
+  gap: 80px;
+  margin-bottom: 50px;
+}
+
+.title-char-label {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.title-char-label.p1 { color: #4ade80; }
+.title-char-label.p2 { color: #a855f7; }
+
+.vs-text {
+  font-size: 48px;
+  font-weight: 900;
+  color: #ef4444;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  align-self: center;
+}
+
+.menu-btn {
+  padding: 15px 50px;
+  font-size: 22px;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 8px;
+  font-family: inherit;
+}
+
+.menu-btn:hover {
+  transform: scale(1.05);
+}
+
+.menu-btn.primary {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #111;
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+}
+
+.menu-btn.primary:hover {
+  box-shadow: 0 0 30px rgba(74, 222, 128, 0.7);
+}
+
+.menu-btn.secondary {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+.menu-btn.secondary:hover {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.7);
+}
+
+.menu-btn.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #111;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+/* Difficulty select */
+#difficultyScreen {
+  background: radial-gradient(ellipse at center, #2d1b4e, #1a0a2e);
+}
+
+.diff-title {
+  font-size: 36px;
+  margin-bottom: 40px;
+  color: #fbbf24;
+}
+
+.diff-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Song select */
+#songScreen {
+  background: radial-gradient(ellipse at center, #2d1b4e, #1a0a2e);
+}
+
+.song-title { font-size: 36px; margin-bottom: 40px; color: #fbbf24; }
+
+.song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.song-item {
+  padding: 15px 40px;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 350px;
+}
+
+.song-item:hover {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: #a855f7;
+  transform: translateX(5px);
+}
+
+.song-bpm {
+  font-size: 13px;
+  color: #a78bfa;
+}
+
+/* Results screen */
+#resultScreen {
+  background: radial-gradient(ellipse at center, #2d1b4e, #1a0a2e);
+}
+
+.result-title {
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 30px;
+}
+
+.result-title.win { color: #4ade80; }
+.result-title.lose { color: #ef4444; }
+
+.result-stats {
+  display: flex;
+  gap: 60px;
+  margin-bottom: 40px;
+}
+
+.result-col {
+  text-align: center;
+}
+
+.result-col h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+}
+
+.result-col.p1 h3 { color: #4ade80; }
+.result-col.p2 h3 { color: #a855f7; }
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 5px 0;
+  font-size: 16px;
+  color: #ccc;
+}
+
+.stat-row .val { color: #fff; font-weight: bold; }
+
+/* Countdown */
+#countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;
+  font-weight: 900;
+  color: #fbbf24;
+  text-shadow: 0 0 40px rgba(251, 191, 36, 0.6);
+  z-index: 50;
+  display: none;
+}
+
+/* Beat indicator */
+.beat-flash {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.5), transparent);
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 1;
+}
+
+/* Pause overlay */
+#pauseOverlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+}
+
+#pauseOverlay h2 {
+  font-size: 48px;
+  color: #fbbf24;
+  margin-bottom: 30px;
+}
+
+/* Controls hint */
+.controls-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+  z-index: 5;
+}
+
+/* Song progress */
+#songProgress {
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  position: relative;
+}
+
+#songProgressFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4ade80, #fbbf24, #a855f7);
+  transition: width 0.5s linear;
+}
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+  <!-- Title Screen -->
+  <div id="titleScreen" class="screen">
+    <div class="title-text">FRIDAY NIGHT FUNKY MUK</div>
+    <div class="title-sub">~ 节奏对决 ~</div>
+    <div class="title-chars">
+      <div>
+        <div class="character melon-man" style="transform:scale(0.8)">
+          <div class="head">
+            <div class="stripe"></div><div class="stripe"></div><div class="stripe"></div>
+            <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+            <div class="mouth"></div>
+          </div>
+          <div class="body">
+            <div class="arm left-arm"></div>
+            <div class="arm right-arm"></div>
+            <div class="mic"></div>
+          </div>
+          <div class="legs">
+            <div><div class="leg"></div><div class="shoe"></div></div>
+            <div><div class="leg"></div><div class="shoe"></div></div>
+          </div>
+        </div>
+        <div class="title-char-label p1">P1 - 甜瓜人</div>
+      </div>
+      <div class="vs-text">VS</div>
+      <div>
+        <div class="character muk" style="transform:scale(0.7)">
+          <div class="body-main">
+            <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+            <div class="mouth"></div>
+            <div class="drip"></div><div class="drip"></div><div class="drip"></div>
+            <div class="arm-sludge left-arm"></div>
+            <div class="arm-sludge right-arm"></div>
+            <div class="stink-lines">
+              <div class="stink-line">~</div>
+              <div class="stink-line">~</div>
+              <div class="stink-line">~</div>
+            </div>
+          </div>
+          <div class="base"></div>
+        </div>
+        <div class="title-char-label p2">P2 - 臭臭泥</div>
+      </div>
+    </div>
+    <button class="menu-btn primary" onclick="showSongSelect()">开始游戏</button>
+    <button class="menu-btn secondary" onclick="showControls()">操作说明</button>
+  </div>
+
+  <!-- Song Select -->
+  <div id="songScreen" class="screen hidden">
+    <div class="song-title">选择歌曲</div>
+    <div class="song-list" id="songList"></div>
+    <button class="menu-btn secondary" style="margin-top:30px" onclick="backToTitle()">返回</button>
+  </div>
+
+  <!-- Controls overlay -->
+  <div id="controlsScreen" class="screen hidden">
+    <h2 style="color:#fbbf24;margin-bottom:30px;font-size:32px;">操作说明</h2>
+    <div style="font-size:18px;line-height:2.2;text-align:center;">
+      <div style="color:#4ade80;font-size:22px;margin-bottom:10px;">P1 甜瓜人 - 键盘左侧</div>
+      <div><kbd style="background:#333;padding:4px 12px;border-radius:5px;">D</kbd> ← 左 &nbsp;
+           <kbd style="background:#333;padding:4px 12px;border-radius:5px;">F</kbd> ↓ 下 &nbsp;
+           <kbd style="background:#333;padding:4px 12px;border-radius:5px;">J</kbd> ↑ 上 &nbsp;
+           <kbd style="background:#333;padding:4px 12px;border-radius:5px;">K</kbd> → 右</div>
+      <br>
+      <div style="color:#a855f7;font-size:22px;margin-bottom:10px;">P2 臭臭泥 - 自动演奏 (AI)</div>
+      <br>
+      <div style="color:#888;">
+        <kbd style="background:#333;padding:4px 12px;border-radius:5px;">ESC</kbd> 暂停 &nbsp;
+        <kbd style="background:#333;padding:4px 12px;border-radius:5px;">Enter</kbd> 确认
+      </div>
+      <br>
+      <div style="color:#888;font-size:14px;">在正确时机按下对应按键来击打音符！<br>越精确分数越高！</div>
+    </div>
+    <button class="menu-btn primary" style="margin-top:30px" onclick="backToTitle()">返回</button>
+  </div>
+
+  <!-- Game Screen (hidden by default) -->
+  <div id="gameScreen" class="screen hidden">
+    <div id="hud">
+      <div class="player-info">
+        <span class="player-name p1-name">甜瓜人</span>
+        <span class="score p1-score" id="p1Score">0</span>
+      </div>
+      <div id="healthBarCenter">
+        <div class="half left"><div class="health-bar-fill" id="p1HealthFill"></div></div>
+        <div class="half"><div class="health-bar-fill" id="p2HealthFill"></div></div>
+        <div id="healthIcon">🎤</div>
+      </div>
+      <div class="player-info">
+        <span class="score p2-score" id="p2Score">0</span>
+        <span class="player-name p2-name">臭臭泥</span>
+      </div>
+    </div>
+    <div id="scoreArea">
+      <div>
+        <span class="combo" id="p1Combo"></span>
+      </div>
+      <div>
+        <span class="combo" id="p2Combo"></span>
+      </div>
+    </div>
+    <div id="songProgress"><div id="songProgressFill"></div></div>
+    <div id="stage">
+      <div class="stage-bg"></div>
+      <div class="stage-floor"></div>
+
+      <!-- P1 Character -->
+      <div class="character-area left">
+        <div class="character melon-man" id="melonMan">
+          <div class="head">
+            <div class="stripe"></div><div class="stripe"></div><div class="stripe"></div>
+            <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+            <div class="mouth"></div>
+          </div>
+          <div class="body">
+            <div class="arm left-arm"></div>
+            <div class="arm right-arm"></div>
+            <div class="mic"></div>
+          </div>
+          <div class="legs">
+            <div><div class="leg"></div><div class="shoe"></div></div>
+            <div><div class="leg"></div><div class="shoe"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note Highway -->
+      <div id="noteHighway">
+        <div class="lane-container" id="laneContainer">
+          <!-- P1 lanes -->
+          <div class="lane p1" data-lane="0" data-player="1">
+            <div class="target-zone" id="target-p1-0">←</div>
+            <div class="key-label">D</div>
+          </div>
+          <div class="lane p1" data-lane="1" data-player="1">
+            <div class="target-zone" id="target-p1-1">↓</div>
+            <div class="key-label">F</div>
+          </div>
+          <!-- Divider -->
+          <div class="lane-divider"></div>
+          <div class="lane p1" data-lane="2" data-player="1">
+            <div class="target-zone" id="target-p1-2">↑</div>
+            <div class="key-label">J</div>
+          </div>
+          <div class="lane p1" data-lane="3" data-player="1">
+            <div class="target-zone" id="target-p1-3">→</div>
+            <div class="key-label">K</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- P2 Character -->
+      <div class="character-area right">
+        <div class="character muk" id="mukChar">
+          <div class="body-main">
+            <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+            <div class="mouth"></div>
+            <div class="drip"></div><div class="drip"></div><div class="drip"></div>
+            <div class="arm-sludge left-arm"></div>
+            <div class="arm-sludge right-arm"></div>
+            <div class="stink-lines">
+              <div class="stink-line">~</div>
+              <div class="stink-line">~</div>
+              <div class="stink-line">~</div>
+            </div>
+          </div>
+          <div class="base"></div>
+        </div>
+      </div>
+
+      <div class="beat-flash" id="beatFlash"></div>
+      <div id="countdown"></div>
+    </div>
+
+    <div class="controls-hint">D F J K - 击打音符 | ESC - 暂停</div>
+  </div>
+
+  <!-- Pause Overlay -->
+  <div id="pauseOverlay">
+    <h2>暂停</h2>
+    <button class="menu-btn primary" onclick="resumeGame()">继续</button>
+    <button class="menu-btn warning" onclick="restartSong()">重新开始</button>
+    <button class="menu-btn secondary" onclick="quitToMenu()">返回菜单</button>
+  </div>
+
+  <!-- Result Screen -->
+  <div id="resultScreen" class="screen hidden">
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-stats">
+      <div class="result-col p1">
+        <h3>甜瓜人</h3>
+        <div class="stat-row"><span>分数</span><span class="val" id="r-p1-score">0</span></div>
+        <div class="stat-row"><span>Perfect</span><span class="val" id="r-p1-perfect">0</span></div>
+        <div class="stat-row"><span>Great</span><span class="val" id="r-p1-great">0</span></div>
+        <div class="stat-row"><span>Good</span><span class="val" id="r-p1-good">0</span></div>
+        <div class="stat-row"><span>Miss</span><span class="val" id="r-p1-miss">0</span></div>
+        <div class="stat-row"><span>最高连击</span><span class="val" id="r-p1-maxcombo">0</span></div>
+      </div>
+      <div class="result-col p2">
+        <h3>臭臭泥</h3>
+        <div class="stat-row"><span>分数</span><span class="val" id="r-p2-score">0</span></div>
+        <div class="stat-row"><span>Perfect</span><span class="val" id="r-p2-perfect">0</span></div>
+        <div class="stat-row"><span>Great</span><span class="val" id="r-p2-great">0</span></div>
+        <div class="stat-row"><span>Good</span><span class="val" id="r-p2-good">0</span></div>
+        <div class="stat-row"><span>Miss</span><span class="val" id="r-p2-miss">0</span></div>
+        <div class="stat-row"><span>最高连击</span><span class="val" id="r-p2-maxcombo">0</span></div>
+      </div>
+    </div>
+    <button class="menu-btn primary" onclick="restartSong()">再来一次</button>
+    <button class="menu-btn secondary" onclick="quitToMenu()">返回菜单</button>
+  </div>
+</div>
+
+<script>
+// ===========================
+// Audio Engine (Web Audio API)
+// ===========================
+const AudioEngine = {
+  ctx: null,
+  masterGain: null,
+  bpm: 120,
+  beatInterval: 500,
+  nextBeatTime: 0,
+  currentBeat: 0,
+  isPlaying: false,
+  scheduledNotes: [],
+
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.value = 0.4;
+      this.masterGain.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+
+  setBPM(bpm) {
+    this.bpm = bpm;
+    this.beatInterval = 60000 / bpm;
+  },
+
+  // Synthesize different note sounds
+  playNote(freq, duration, type = 'square', delay = 0) {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime + delay;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(t);
+    osc.stop(t + duration);
+  },
+
+  playBeat() {
+    this.playNote(80, 0.1, 'sine');
+  },
+
+  playHit(rating) {
+    const freqs = { perfect: 880, great: 660, good: 440, miss: 150 };
+    const types = { perfect: 'sine', great: 'sine', good: 'triangle', miss: 'sawtooth' };
+    this.playNote(freqs[rating] || 440, 0.15, types[rating] || 'sine');
+    if (rating === 'perfect') {
+      this.playNote(1320, 0.1, 'sine', 0.05);
+    }
+  },
+
+  playMelody(notes, startDelay = 0) {
+    notes.forEach((n, i) => {
+      this.playNote(n.freq, n.dur || 0.15, n.type || 'square', startDelay + i * (this.beatInterval / 1000));
+    });
+  },
+
+  playCountdownBeep(high) {
+    this.playNote(high ? 880 : 440, 0.15, 'sine');
+  }
+};
+
+// ===========================
+// Song Data & Pattern Generator
+// ===========================
+const ARROW_SYMBOLS = ['←', '↓', '↑', '→'];
+
+const SONGS = [
+  {
+    name: '初次见面',
+    nameEn: 'First Meeting',
+    bpm: 100,
+    difficulty: 1,
+    duration: 40,
+    description: '简单的入门曲目'
+  },
+  {
+    name: '臭气冲天',
+    nameEn: 'Toxic Fumes',
+    bpm: 120,
+    difficulty: 2,
+    duration: 45,
+    description: '臭臭泥开始认真了！'
+  },
+  {
+    name: '瓜皮反击',
+    nameEn: 'Melon Strike',
+    bpm: 140,
+    difficulty: 3,
+    duration: 50,
+    description: '甜瓜人的逆袭时刻'
+  },
+  {
+    name: '毒液狂潮',
+    nameEn: 'Sludge Wave',
+    bpm: 160,
+    difficulty: 4,
+    duration: 55,
+    description: '高速节奏大挑战！'
+  },
+  {
+    name: '最终决战',
+    nameEn: 'Final Showdown',
+    bpm: 180,
+    difficulty: 5,
+    duration: 60,
+    description: '终极对决，你能撑到最后吗？'
+  }
+];
+
+function generateSongPattern(song) {
+  const beatsPerSecond = song.bpm / 60;
+  const totalBeats = Math.floor(song.duration * beatsPerSecond);
+  const pattern = { p1: [], p2: [] };
+  const seed = song.bpm * 137 + song.difficulty * 31;
+
+  // Simple seeded random
+  let rng = seed;
+  function rand() {
+    rng = (rng * 1103515245 + 12345) & 0x7fffffff;
+    return rng / 0x7fffffff;
+  }
+
+  // Generate P2 (opponent) pattern first - more complex
+  const p2Density = 0.3 + song.difficulty * 0.1;
+  for (let beat = 4; beat < totalBeats; beat++) {
+    if (rand() < p2Density) {
+      const lane = Math.floor(rand() * 4);
+      const time = (beat / beatsPerSecond) * 1000;
+      pattern.p2.push({ time, lane, hit: false });
+
+      // Double notes at higher difficulties
+      if (song.difficulty >= 3 && rand() < 0.2) {
+        let lane2 = (lane + 1 + Math.floor(rand() * 3)) % 4;
+        pattern.p2.push({ time, lane: lane2, hit: false });
+      }
+    }
+  }
+
+  // Generate P1 pattern - follows P2 with some variation
+  const p1Density = 0.25 + song.difficulty * 0.08;
+  for (let beat = 4; beat < totalBeats; beat++) {
+    if (rand() < p1Density) {
+      const lane = Math.floor(rand() * 4);
+      const time = (beat / beatsPerSecond) * 1000;
+      pattern.p1.push({ time, lane, hit: false });
+
+      if (song.difficulty >= 4 && rand() < 0.15) {
+        let lane2 = (lane + 1 + Math.floor(rand() * 3)) % 4;
+        pattern.p1.push({ time, lane: lane2, hit: false });
+      }
+    }
+  }
+
+  return pattern;
+}
+
+// ===========================
+// Game State
+// ===========================
+const GameState = {
+  screen: 'title',
+  currentSong: null,
+  pattern: null,
+  startTime: 0,
+  elapsed: 0,
+  paused: false,
+  pauseStartTime: 0,
+  totalPausedTime: 0,
+  gameOver: false,
+  scrollSpeed: 4, // pixels per ms
+
+  p1: { score: 0, combo: 0, maxCombo: 0, health: 50, perfect: 0, great: 0, good: 0, miss: 0 },
+  p2: { score: 0, combo: 0, maxCombo: 0, health: 50, perfect: 0, great: 0, good: 0, miss: 0 },
+
+  // Note tracking
+  activeNotes: { p1: [], p2: [] },
+  noteElements: new Map(),
+
+  // Timing windows (in ms)
+  timing: {
+    perfect: 45,
+    great: 90,
+    good: 135,
+    miss: 180
+  },
+
+  reset() {
+    this.elapsed = 0;
+    this.paused = false;
+    this.totalPausedTime = 0;
+    this.gameOver = false;
+    this.p1 = { score: 0, combo: 0, maxCombo: 0, health: 50, perfect: 0, great: 0, good: 0, miss: 0 };
+    this.p2 = { score: 0, combo: 0, maxCombo: 0, health: 50, perfect: 0, great: 0, good: 0, miss: 0 };
+    this.activeNotes = { p1: [], p2: [] };
+    this.noteElements.forEach(el => el.remove());
+    this.noteElements.clear();
+  }
+};
+
+// ===========================
+// Input Handler
+// ===========================
+const Input = {
+  keyMap: {
+    'd': 0, 'D': 0,
+    'f': 1, 'F': 1,
+    'j': 2, 'J': 2,
+    'k': 3, 'K': 3,
+  },
+  pressed: new Set(),
+
+  init() {
+    document.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+
+      if (e.key === 'Escape') {
+        if (GameState.screen === 'game') togglePause();
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        if (GameState.screen === 'title') showSongSelect();
+        return;
+      }
+
+      if (GameState.screen !== 'game' || GameState.paused || GameState.gameOver) return;
+
+      const lane = this.keyMap[e.key];
+      if (lane !== undefined && !this.pressed.has(e.key.toLowerCase())) {
+        this.pressed.add(e.key.toLowerCase());
+        handleNoteHit(1, lane);
+        activateTarget(1, lane);
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      this.pressed.delete(e.key.toLowerCase());
+      const lane = this.keyMap[e.key];
+      if (lane !== undefined) {
+        deactivateTarget(1, lane);
+      }
+    });
+  }
+};
+
+// ===========================
+// UI Functions
+// ===========================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function backToTitle() {
+  GameState.screen = 'title';
+  showScreen('titleScreen');
+}
+
+function showControls() {
+  showScreen('controlsScreen');
+}
+
+function showSongSelect() {
+  GameState.screen = 'songSelect';
+  const list = document.getElementById('songList');
+  list.innerHTML = '';
+  SONGS.forEach((song, i) => {
+    const item = document.createElement('button');
+    item.className = 'song-item';
+    const stars = '★'.repeat(song.difficulty) + '☆'.repeat(5 - song.difficulty);
+    item.innerHTML = `
+      <div>
+        <div style="font-weight:bold">${song.name}</div>
+        <div style="font-size:13px;color:#aaa">${song.description}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="song-bpm">${song.bpm} BPM</div>
+        <div style="color:#fbbf24;font-size:13px">${stars}</div>
+      </div>
+    `;
+    item.onclick = () => startSong(i);
+    list.appendChild(item);
+  });
+  showScreen('songScreen');
+}
+
+function activateTarget(player, lane) {
+  const target = document.getElementById(`target-p${player}-${lane}`);
+  if (target) target.classList.add('active');
+}
+
+function deactivateTarget(player, lane) {
+  const target = document.getElementById(`target-p${player}-${lane}`);
+  if (target) target.classList.remove('active');
+}
+
+function showRating(player, lane, rating) {
+  const laneEl = document.querySelector(`.lane.p${player}[data-lane="${lane}"]`);
+  if (!laneEl) return;
+  const popup = document.createElement('div');
+  popup.className = `rating-popup ${rating}`;
+  popup.textContent = rating.toUpperCase();
+  popup.style.bottom = '160px';
+  popup.style.left = '50%';
+  popup.style.transform = 'translateX(-50%)';
+  laneEl.appendChild(popup);
+  setTimeout(() => popup.remove(), 800);
+}
+
+function updateHUD() {
+  document.getElementById('p1Score').textContent = GameState.p1.score;
+  document.getElementById('p2Score').textContent = GameState.p2.score;
+
+  const p1Combo = document.getElementById('p1Combo');
+  const p2Combo = document.getElementById('p2Combo');
+  p1Combo.textContent = GameState.p1.combo > 1 ? `${GameState.p1.combo} COMBO` : '';
+  p2Combo.textContent = GameState.p2.combo > 1 ? `${GameState.p2.combo} COMBO` : '';
+
+  // Health bar
+  const totalHealth = GameState.p1.health + GameState.p2.health;
+  const p1Pct = (GameState.p1.health / totalHealth) * 100;
+  const p2Pct = (GameState.p2.health / totalHealth) * 100;
+  document.getElementById('p1HealthFill').style.width = p1Pct + '%';
+  document.getElementById('p2HealthFill').style.width = p2Pct + '%';
+
+  // Progress
+  if (GameState.currentSong) {
+    const pct = Math.min(100, (GameState.elapsed / (GameState.currentSong.duration * 1000)) * 100);
+    document.getElementById('songProgressFill').style.width = pct + '%';
+  }
+}
+
+function updateCharacterAnimation(player, isSinging) {
+  if (player === 1) {
+    const el = document.getElementById('melonMan');
+    if (isSinging) {
+      el.classList.add('singing');
+      setTimeout(() => el.classList.remove('singing'), 200);
+    }
+  } else {
+    const el = document.getElementById('mukChar');
+    if (isSinging) {
+      el.classList.add('singing');
+      setTimeout(() => el.classList.remove('singing'), 200);
+    }
+  }
+}
+
+// ===========================
+// Note Management
+// ===========================
+const TARGET_Y_OFFSET = 80; // target zone bottom offset in px
+
+function getTargetY() {
+  const stage = document.getElementById('stage');
+  return stage.offsetHeight - TARGET_Y_OFFSET - 35; // center of target
+}
+
+function createNoteElement(note, player) {
+  const noteEl = document.createElement('div');
+  noteEl.className = `note p${player}`;
+  noteEl.textContent = ARROW_SYMBOLS[note.lane];
+
+  // Find the lane element
+  const lanes = document.querySelectorAll(`.lane.p${player}`);
+  const laneEl = lanes[note.lane];
+  if (!laneEl) return null;
+
+  laneEl.appendChild(noteEl);
+  return noteEl;
+}
+
+function spawnNotes() {
+  if (!GameState.pattern) return;
+  const elapsed = GameState.elapsed;
+  const travelTime = getTargetY() / GameState.scrollSpeed;
+
+  // P1 notes
+  GameState.pattern.p1.forEach((note, i) => {
+    const noteId = `p1-${i}`;
+    if (!note.spawned && !note.hit && note.time - elapsed < travelTime + 500 && note.time > elapsed - 500) {
+      const el = createNoteElement(note, 1);
+      if (el) {
+        note.spawned = true;
+        note.element = el;
+        GameState.noteElements.set(noteId, el);
+      }
+    }
+  });
+
+  // P2 notes
+  GameState.pattern.p2.forEach((note, i) => {
+    const noteId = `p2-${i}`;
+    if (!note.spawned && !note.hit && note.time - elapsed < travelTime + 500 && note.time > elapsed - 500) {
+      const el = createNoteElement(note, 2);
+      if (el) {
+        note.spawned = true;
+        note.element = el;
+        GameState.noteElements.set(noteId, el);
+      }
+    }
+  });
+}
+
+function updateNotes() {
+  const elapsed = GameState.elapsed;
+  const targetY = getTargetY();
+  const speed = GameState.scrollSpeed;
+
+  function updatePlayerNotes(notes, player, prefix) {
+    notes.forEach((note, i) => {
+      if (!note.spawned || note.hit) return;
+      const noteId = `${prefix}-${i}`;
+      const el = note.element;
+      if (!el) return;
+
+      const timeDiff = note.time - elapsed;
+      const y = targetY - (timeDiff * speed);
+      el.style.top = y + 'px';
+
+      // Auto-play P2
+      if (player === 2 && Math.abs(timeDiff) < 30) {
+        note.hit = true;
+        el.remove();
+        GameState.noteElements.delete(noteId);
+
+        const ratings = ['perfect', 'great'];
+        const rating = ratings[Math.floor(Math.random() * 2)];
+        processHit(2, note.lane, rating);
+      }
+
+      // Remove missed notes
+      if (timeDiff < -GameState.timing.miss) {
+        if (!note.hit) {
+          if (player === 1) {
+            processMiss(1, note.lane);
+          }
+          note.hit = true;
+        }
+        el.remove();
+        GameState.noteElements.delete(noteId);
+      }
+
+      // Remove if off screen
+      if (y > targetY + 200) {
+        el.remove();
+        GameState.noteElements.delete(noteId);
+      }
+    });
+  }
+
+  updatePlayerNotes(GameState.pattern.p1, 1, 'p1');
+  updatePlayerNotes(GameState.pattern.p2, 2, 'p2');
+}
+
+// ===========================
+// Hit Detection
+// ===========================
+function handleNoteHit(player, lane) {
+  const notes = GameState.pattern[`p${player}`];
+  const elapsed = GameState.elapsed;
+  let bestNote = null;
+  let bestDiff = Infinity;
+
+  notes.forEach((note) => {
+    if (note.hit || note.lane !== lane) return;
+    const diff = Math.abs(note.time - elapsed);
+    if (diff < bestDiff && diff < GameState.timing.miss) {
+      bestDiff = diff;
+      bestNote = note;
+    }
+  });
+
+  if (bestNote) {
+    bestNote.hit = true;
+    if (bestNote.element) {
+      bestNote.element.style.animation = 'hitFlash 0.15s';
+      setTimeout(() => {
+        if (bestNote.element) {
+          bestNote.element.remove();
+        }
+      }, 100);
+    }
+
+    let rating;
+    if (bestDiff <= GameState.timing.perfect) rating = 'perfect';
+    else if (bestDiff <= GameState.timing.great) rating = 'great';
+    else if (bestDiff <= GameState.timing.good) rating = 'good';
+    else rating = 'miss';
+
+    processHit(player, lane, rating);
+  }
+}
+
+function processHit(player, lane, rating) {
+  const state = player === 1 ? GameState.p1 : GameState.p2;
+  const opponent = player === 1 ? GameState.p2 : GameState.p1;
+
+  const scores = { perfect: 350, great: 200, good: 100, miss: 0 };
+  const healthGain = { perfect: 2, great: 1, good: 0.5, miss: 0 };
+
+  state[rating]++;
+  state.combo++;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+  const comboMultiplier = 1 + Math.floor(state.combo / 10) * 0.1;
+  state.score += Math.floor(scores[rating] * comboMultiplier);
+
+  state.health = Math.min(100, state.health + healthGain[rating]);
+  opponent.health = Math.max(5, opponent.health - healthGain[rating] * 0.5);
+
+  AudioEngine.playHit(rating);
+  showRating(player, lane, rating);
+  updateCharacterAnimation(player, true);
+  updateHUD();
+
+  // Play a melody note based on lane
+  const melodyFreqs = [262, 330, 392, 523]; // C4, E4, G4, C5
+  AudioEngine.playNote(melodyFreqs[lane], 0.2, player === 1 ? 'square' : 'sawtooth');
+}
+
+function processMiss(player, lane) {
+  const state = player === 1 ? GameState.p1 : GameState.p2;
+  const opponent = player === 1 ? GameState.p2 : GameState.p1;
+
+  state.miss++;
+  state.combo = 0;
+  state.health = Math.max(5, state.health - 3);
+  opponent.health = Math.min(100, opponent.health + 1.5);
+
+  showRating(player, lane, 'miss');
+  updateHUD();
+}
+
+// ===========================
+// Game Loop
+// ===========================
+let animFrameId = null;
+let lastBeatTime = 0;
+
+function gameLoop(timestamp) {
+  if (GameState.paused || GameState.gameOver) return;
+
+  GameState.elapsed = Date.now() - GameState.startTime - GameState.totalPausedTime;
+
+  // Beat tracking
+  const beatInterval = AudioEngine.beatInterval;
+  if (GameState.elapsed - lastBeatTime >= beatInterval) {
+    lastBeatTime += beatInterval;
+    AudioEngine.playBeat();
+    const flash = document.getElementById('beatFlash');
+    flash.style.opacity = '1';
+    setTimeout(() => flash.style.opacity = '0', 100);
+  }
+
+  spawnNotes();
+  updateNotes();
+  updateHUD();
+
+  // Check end condition
+  if (GameState.elapsed >= GameState.currentSong.duration * 1000) {
+    endSong();
+    return;
+  }
+
+  // Check health-based loss
+  if (GameState.p1.health <= 5 && GameState.p2.health >= 95) {
+    endSong();
+    return;
+  }
+
+  animFrameId = requestAnimationFrame(gameLoop);
+}
+
+// ===========================
+// Game Control
+// ===========================
+function startSong(index) {
+  AudioEngine.init();
+  GameState.reset();
+
+  GameState.currentSong = SONGS[index];
+  GameState.pattern = generateSongPattern(GameState.currentSong);
+  GameState.scrollSpeed = 3.5 + GameState.currentSong.difficulty * 0.3;
+
+  AudioEngine.setBPM(GameState.currentSong.bpm);
+
+  GameState.screen = 'game';
+  showScreen('gameScreen');
+
+  // Countdown
+  const countdownEl = document.getElementById('countdown');
+  countdownEl.style.display = 'block';
+  let count = 3;
+  countdownEl.textContent = count;
+  AudioEngine.playCountdownBeep(false);
+
+  const countdownInterval = setInterval(() => {
+    count--;
+    if (count > 0) {
+      countdownEl.textContent = count;
+      AudioEngine.playCountdownBeep(false);
+    } else if (count === 0) {
+      countdownEl.textContent = 'GO!';
+      countdownEl.style.color = '#4ade80';
+      AudioEngine.playCountdownBeep(true);
+    } else {
+      countdownEl.style.display = 'none';
+      countdownEl.style.color = '#fbbf24';
+      clearInterval(countdownInterval);
+
+      // Start game
+      GameState.startTime = Date.now();
+      lastBeatTime = 0;
+      animFrameId = requestAnimationFrame(gameLoop);
+    }
+  }, 800);
+}
+
+function togglePause() {
+  if (GameState.gameOver) return;
+  GameState.paused = !GameState.paused;
+  const overlay = document.getElementById('pauseOverlay');
+
+  if (GameState.paused) {
+    GameState.pauseStartTime = Date.now();
+    overlay.style.display = 'flex';
+  } else {
+    GameState.totalPausedTime += Date.now() - GameState.pauseStartTime;
+    overlay.style.display = 'none';
+    animFrameId = requestAnimationFrame(gameLoop);
+  }
+}
+
+function resumeGame() {
+  if (GameState.paused) togglePause();
+}
+
+function restartSong() {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  document.getElementById('pauseOverlay').style.display = 'none';
+  // Clear note elements
+  GameState.noteElements.forEach(el => el.remove());
+  GameState.noteElements.clear();
+  document.querySelectorAll('.note').forEach(n => n.remove());
+  document.querySelectorAll('.rating-popup').forEach(r => r.remove());
+
+  const songIndex = SONGS.indexOf(GameState.currentSong);
+  startSong(songIndex);
+}
+
+function quitToMenu() {
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+  document.getElementById('pauseOverlay').style.display = 'none';
+  GameState.gameOver = true;
+  // Cleanup notes
+  GameState.noteElements.forEach(el => el.remove());
+  GameState.noteElements.clear();
+  document.querySelectorAll('.note').forEach(n => n.remove());
+  document.querySelectorAll('.rating-popup').forEach(r => r.remove());
+
+  backToTitle();
+}
+
+function endSong() {
+  GameState.gameOver = true;
+  if (animFrameId) cancelAnimationFrame(animFrameId);
+
+  const p1Won = GameState.p1.score >= GameState.p2.score;
+  const titleEl = document.getElementById('resultTitle');
+
+  if (p1Won) {
+    titleEl.textContent = '甜瓜人 获胜！';
+    titleEl.className = 'result-title win';
+  } else {
+    titleEl.textContent = '臭臭泥 获胜！';
+    titleEl.className = 'result-title lose';
+  }
+
+  // Fill stats
+  document.getElementById('r-p1-score').textContent = GameState.p1.score;
+  document.getElementById('r-p1-perfect').textContent = GameState.p1.perfect;
+  document.getElementById('r-p1-great').textContent = GameState.p1.great;
+  document.getElementById('r-p1-good').textContent = GameState.p1.good;
+  document.getElementById('r-p1-miss').textContent = GameState.p1.miss;
+  document.getElementById('r-p1-maxcombo').textContent = GameState.p1.maxCombo;
+
+  document.getElementById('r-p2-score').textContent = GameState.p2.score;
+  document.getElementById('r-p2-perfect').textContent = GameState.p2.perfect;
+  document.getElementById('r-p2-great').textContent = GameState.p2.great;
+  document.getElementById('r-p2-good').textContent = GameState.p2.good;
+  document.getElementById('r-p2-miss').textContent = GameState.p2.miss;
+  document.getElementById('r-p2-maxcombo').textContent = GameState.p2.maxCombo;
+
+  // Play ending sound
+  AudioEngine.playNote(523, 0.3, 'sine');
+  setTimeout(() => AudioEngine.playNote(659, 0.3, 'sine'), 200);
+  setTimeout(() => AudioEngine.playNote(784, 0.5, 'sine'), 400);
+
+  GameState.screen = 'result';
+  showScreen('resultScreen');
+}
+
+// ===========================
+// Initialize
+// ===========================
+Input.init();
+
+// Ensure AudioContext starts on user interaction
+document.addEventListener('click', () => AudioEngine.init(), { once: true });
+document.addEventListener('keydown', () => AudioEngine.init(), { once: true });
+</script>
+</body>
+</html>
